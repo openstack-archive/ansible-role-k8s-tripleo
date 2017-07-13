@@ -1,67 +1,74 @@
 #!/usr/bin/env python
 
+import os
+import yaml
+
+from ansible.module_utils.basic import AnsibleModule
+
 
 DOCUMENTATION = '''
 ---
-module: helm
-short_description: Manages Kubernetes packages with the Helm package manager
+module: parse_tripleo_hiera
+short_description: Translates hieradata into an oslo.config dict
 version_added: "2.4"
-author: "Flavio Percoco (flaper87)"
+author: "TripleO Team"
 description:
-   - Install, upgrade, delete and list packages with the Helm package manage
+   - Translates hieradata into an oslo.config dict
 requirements:
-  - "pyhelm"
-  - "grpcio"
 options:
-  host:
+  hieradata:
     description:
-      - Tiller's server host
+      - A dictionary containing the hieradata
     required: false
-    default: "localhost"
-  port:
+    default: {}
+  hieradata_file:
     description:
-      - Tiller's server port
+      - A path to an existing hieradata yaml file
     required: false
-    default: 44134
-  namespace:
+    default: ''
+  schema:
     description:
-      - Kubernetes namespace where the chart should be installed
-    required: false
-    default: "default"
-  name:
-    description:
-      - Release name to manage
-    required: false
-    default: null
+      - Dictionary mapping a hiera key to an oslo.config group.name pair.
+    required: true
 '''
 
 RETURN = ''' # '''
 
 EXAMPLES = '''
-- name: Install helm chart
-  helm:
-    host: localhost
-    chart:
-      name: memcached
-      version: 0.4.0
-      source:
-        type: repo
-        location: https://kubernetes-charts.storage.googleapis.com
-    state: installed
-    name: my-memcached
-    namespace: default
+- name: Test hieradata
+  parse_tripleo_hiera:
+    hieradata:
+      glance::api::v1: True
+    schema:
+      glance::api::v1: DEFAULT.enable_glance_v1
+  register: result
 
-- name: Uninstall helm chart
-  helm:
-    host: localhost
-    state: absent
-    name: my-memcached
+
+- name: Check values
+  fail:
+    msg: "DEFAULT not in conf_dict"
+  when:
+    - not result.conf_dict['DEFAULT']
+    - not result.conf_dict['DEFAULT']['enable_glance_v1']
+
+
+- name: Test include role
+  include_role:
+    name: 'ansible-role-k8s-tripleo'
+  vars:
+    hieradata:
+      glance::api::v1: True
+    schema:
+      glance::api::v1: DEFAULT.enable_glance_v1
+    fact_variable: 'glance_config'
+
+
+- name: Check fact glance_config
+  fail:
+    msg: "glance_config not set"
+  when:
+    - not glance_config
 '''
-
-import os
-import yaml
-
-from ansible.module_utils.basic import AnsibleModule
 
 
 def main():
@@ -86,7 +93,7 @@ def main():
 
     conf_dict = {}
     for key, mapping in schema.items():
-        if not key in hieradata:
+        if key not in hieradata:
             continue
 
         value = hieradata[key]
