@@ -1,0 +1,7 @@
+---
+- hosts: localhost
+  connection: local
+  remote_user: root
+  roles:
+    - role: ansible-role-k8s-tripleo
+    - role: parse-tripleo-hiera

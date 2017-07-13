@@ -1,0 +1,14 @@
+- name: Translate hieradata
+  parse_tripleo_hiera:
+    hieradata: '{{ hieradata }}'
+    schema: '{{ schema }}'
+  when:
+    - hieradata or hieradata_file
+    - schema
+  register: result
+
+- name: Set facts
+  set_fact:
+    '{{fact_variable}}': '{{result.conf_dict}}'
+  when:
+    - fact_variable != ''
