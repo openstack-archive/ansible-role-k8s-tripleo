@@ -11,4 +11,5 @@
   set_fact:
     '{{fact_variable}}': '{{result.conf_dict}}'
   when:
+    - result
     - fact_variable != ''
