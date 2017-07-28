@@ -1,4 +1,4 @@
 schema: {}
 hieradata: {}
-hieradata_file: ''
+hieradata_file: '/etc/puppet/hieradata/service_configs.json'
 fact_variable: ''

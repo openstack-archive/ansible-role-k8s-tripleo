@@ -85,11 +85,12 @@ def main():
     hieradata = module.params['hieradata']
     hieradata_file = module.params['hieradata_file']
 
-    if not (hieradata or hieradata_file):
+    if not (hieradata or (hieradata_file and os.path.exists(hieradata_file))):
         module.fail_json(msg="Either hieradata or hieradata_file must be set")
 
     if os.path.exists(hieradata_file):
-        hieradata = yaml.safe_load(hieradata_file)
+        # NOTE(flaper87): This will load both, json and yaml, files
+        hieradata = yaml.safe_load(open(hieradata_file))
 
     conf_dict = {}
     for key, mapping in schema.items():
