@@ -98,9 +98,14 @@ def main():
             continue
 
         value = hieradata[key]
+        parts = mapping.split('.')
+        last = parts.pop()
+        subg = conf_dict
 
-        group, name = mapping.split('.')
-        conf_dict.setdefault(group, {})[name] = value
+        for part in parts:
+            subg = conf_dict.setdefault(part, {})
+
+        subg[last] = value
 
     module.exit_json(**{'conf_dict': conf_dict})
 
