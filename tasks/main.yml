@@ -1,5 +1,6 @@
 - name: Translate hieradata
   parse_tripleo_hiera:
+    hieradata_file: '{{ hieradata_file }}'
     hieradata: '{{ hieradata }}'
     schema: '{{ schema }}'
   when:
