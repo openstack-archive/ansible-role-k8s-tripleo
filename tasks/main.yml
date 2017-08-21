@@ -3,6 +3,7 @@
     hieradata_file: '{{ hieradata_file }}'
     hieradata: '{{ hieradata }}'
     schema: '{{ schema }}'
+    default: '{{default}}'
   when:
     - hieradata or hieradata_file
     - schema

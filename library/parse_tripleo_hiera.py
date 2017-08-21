@@ -78,6 +78,7 @@ def main():
             hieradata=dict(type='dict', default={}),
             hieradata_file=dict(type='str', default=''),
             schema=dict(type='dict'),
+            default=dict(type='dict'),
         ),
         supports_check_mode=True)
 
@@ -92,7 +93,7 @@ def main():
         # NOTE(flaper87): This will load both, json and yaml, files
         hieradata = yaml.safe_load(open(hieradata_file))
 
-    conf_dict = {}
+    conf_dict = module.params['default']
     for key, mapping in schema.items():
         if key not in hieradata:
             continue
