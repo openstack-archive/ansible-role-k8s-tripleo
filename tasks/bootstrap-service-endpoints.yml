@@ -12,6 +12,8 @@
         name: '{{service_name}}-keystone-user'
         command:
           - openstack
+          - --os-cloud
+          - "{{namespace}}"
           - user
           - create
           - --project
@@ -19,46 +21,29 @@
           - --password
           - '{{service_password}}'
           - '{{service_username}}'
-        env:
-          - name: OS_IDENTITY_API_VERSION
-            value: "3"
-          - name: OS_AUTH_URL
-            value: '{{auth_url}}'
-          - name: OS_DEFAULT_DOMAIN
-            value: '{{domain_name}}'
-          - name: OS_USERNAME
-            value: '{{username}}'
-          - name: OS_PASSWORD
-            value: '{{password}}'
-          - name: OS_PROJECT_NAME
-            value: '{{project_name}}'
+        volume_mounts: &volume_mounts
+          - name: clouds-yaml
+            mountPath: /etc/openstack/
+            read_only: true
       - image: tripleoupstream/centos-binary-glance-api
         name: '{{service_name}}-keystone-service'
         command:
           - openstack
+          - --os-cloud
+          - "{{namespace}}"
           - service
           - create
           - --enable
           - --name
           - '{{service_name}}'
           - '{{service_type}}'
-        env:
-          - name: OS_IDENTITY_API_VERSION
-            value: "3"
-          - name: OS_AUTH_URL
-            value: '{{auth_url}}'
-          - name: OS_DEFAULT_DOMAIN
-            value: '{{domain_name}}'
-          - name: OS_USERNAME
-            value: '{{username}}'
-          - name: OS_PASSWORD
-            value: '{{password}}'
-          - name: OS_PROJECT_NAME
-            value: '{{project_name}}'
+        volume_mounts: *volume_mounts
       - image: tripleoupstream/centos-binary-glance-api
         name: '{{service_name}}-keystone-internal-url'
         command:
           - openstack
+          - --os-cloud
+          - "{{namespace}}"
           - endpoint
           - create
           - --region
@@ -67,23 +52,13 @@
           - '{{service_name}}'
           - 'internal'
           - '{{service_internal_url}}'
-        env:
-          - name: OS_IDENTITY_API_VERSION
-            value: "3"
-          - name: OS_AUTH_URL
-            value: '{{auth_url}}'
-          - name: OS_DEFAULT_DOMAIN
-            value: '{{domain_name}}'
-          - name: OS_USERNAME
-            value: '{{username}}'
-          - name: OS_PASSWORD
-            value: '{{password}}'
-          - name: OS_PROJECT_NAME
-            value: '{{project_name}}'
+        volume_mounts: *volume_mounts
       - image: tripleoupstream/centos-binary-glance-api
         name: '{{service_name}}-keystone-public-url'
         command:
           - openstack
+          - --os-cloud
+          - "{{namespace}}"
           - endpoint
           - create
           - --region
@@ -92,23 +67,13 @@
           - '{{service_name}}'
           - 'public'
           - '{{service_public_url}}'
-        env:
-          - name: OS_IDENTITY_API_VERSION
-            value: "3"
-          - name: OS_AUTH_URL
-            value: '{{auth_url}}'
-          - name: OS_DEFAULT_DOMAIN
-            value: '{{domain_name}}'
-          - name: OS_USERNAME
-            value: '{{username}}'
-          - name: OS_PASSWORD
-            value: '{{password}}'
-          - name: OS_PROJECT_NAME
-            value: '{{project_name}}'
+        volume_mounts: *volume_mounts
       - image: tripleoupstream/centos-binary-glance-api
         name: '{{service_name}}-keystone-admin-url'
         command:
           - openstack
+          - --os-cloud
+          - "{{namespace}}"
           - endpoint
           - create
           - --region
@@ -117,24 +82,9 @@
           - '{{service_name}}'
           - 'admin'
           - '{{service_admin_url}}'
-        env:
-          - name: OS_IDENTITY_API_VERSION
-            value: "3"
-          - name: OS_AUTH_URL
-            value: '{{auth_url}}'
-          - name: OS_DEFAULT_DOMAIN
-            value: '{{domain_name}}'
-          - name: OS_USERNAME
-            value: '{{username}}'
-          - name: OS_PASSWORD
-            value: '{{password}}'
-          - name: OS_PROJECT_NAME
-            value: '{{project_name}}'
-        volume_mounts:
-        - name: kolla-config
-          mountPath: /var/lib/kolla/config_files/
+        volume_mounts: *volume_mounts
     volumes:
-      - name: kolla-config
-        config_map:
-          name: glance
+      - name: clouds-yaml
+        secret:
+          secret_name: keystone-secret
     state: present
