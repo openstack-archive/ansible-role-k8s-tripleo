@@ -4,7 +4,7 @@
     context: "{{kube_context}}"
     kubeconfig: "{{config_file}}"
     name: '{{service_name}}-keystone'
-    namespace: openstack
+    namespace: "{{namespace}}"
     state: present
     restart_policy: OnFailure
     containers:

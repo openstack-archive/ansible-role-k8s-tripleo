@@ -1,3 +1,7 @@
+# Kubernetes
+namespace: openstack
+
+# TripleO
 default: {}
 schema: {}
 hieradata: {}
