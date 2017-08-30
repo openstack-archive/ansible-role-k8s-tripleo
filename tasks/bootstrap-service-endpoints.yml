@@ -86,5 +86,5 @@
     volumes:
       - name: clouds-yaml
         secret:
-          secret_name: keystone-secret
+          secret_name: '{{clouds_config}}'
     state: present
