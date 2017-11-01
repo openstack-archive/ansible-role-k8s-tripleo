@@ -1,8 +1,8 @@
 - name: Create database for {{service_name}} job
   k8s_v1_job:
     host: "{{coe_host}}"
-    context: "{{kube_context}}"
-    kubeconfig: "{{config_file}}"
+    context: "{{coe_config_context}}"
+    kubeconfig: "{{coe_config_file}}"
     name: '{{service_name}}-createdb'
     namespace: "{{namespace}}"
     state: present
