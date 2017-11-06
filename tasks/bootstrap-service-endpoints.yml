@@ -8,7 +8,7 @@
     state: present
     restart_policy: OnFailure
     containers:
-      - image: tripleoupstream/centos-binary-glance-api
+      - image: tripleoupstream/centos-binary-keystone
         name: '{{service_name}}-keystone-user'
         command:
           - openstack
@@ -25,7 +25,7 @@
           - name: clouds-yaml
             mountPath: /etc/openstack/
             read_only: true
-      - image: tripleoupstream/centos-binary-glance-api
+      - image: tripleoupstream/centos-binary-keystone
         name: '{{service_name}}-keystone-service'
         command:
           - openstack
@@ -38,7 +38,7 @@
           - '{{service_name}}'
           - '{{service_type}}'
         volume_mounts: *volume_mounts
-      - image: tripleoupstream/centos-binary-glance-api
+      - image: tripleoupstream/centos-binary-keystone
         name: '{{service_name}}-keystone-internal-url'
         command:
           - openstack
@@ -53,7 +53,7 @@
           - 'internal'
           - '{{service_internal_url}}'
         volume_mounts: *volume_mounts
-      - image: tripleoupstream/centos-binary-glance-api
+      - image: tripleoupstream/centos-binary-keystone
         name: '{{service_name}}-keystone-public-url'
         command:
           - openstack
@@ -68,7 +68,7 @@
           - 'public'
           - '{{service_public_url}}'
         volume_mounts: *volume_mounts
-      - image: tripleoupstream/centos-binary-glance-api
+      - image: tripleoupstream/centos-binary-keystone
         name: '{{service_name}}-keystone-admin-url'
         command:
           - openstack
