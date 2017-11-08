@@ -1,4 +1,54 @@
-- name: Create glance keystone job
+- name: Keystone provision playbook
+  ignore_errors: yes
+  k8s_v1_config_map:
+    host: "{{coe_host}}"
+    context: "{{coe_config_context}}"
+    kubeconfig: "{{coe_config_file}}"
+    name: '{{service_name}}-keystone'
+    namespace: "{{namespace}}"
+    state: present
+    labels:
+      service: glance
+    data:
+      playbook.yaml: |
+        - hosts: localhost
+          gather_facts: no
+          connection: local
+          tasks:
+            - os_user:
+                cloud: "{{namespace}}"
+                state: present
+                name: "{{service_username}}"
+                password: "{{service_password}}"
+                default_project: "{{service_project}}"
+            - os_keystone_service:
+                cloud: "{{namespace}}"
+                state: present
+                enabled: true
+                name: '{{service_name}}'
+                service_type: '{{service_type}}'
+# NOTE(flaper87): We need ansible 2.5 to use this task
+# or to vendor the os_keystone_endpoint module and ship
+# it in the ansible-role-k8s-tripleo RPM inside the base
+# container image. Until either of those happen, we will
+# run `openstack` commands in the CLI
+#            - os_keystone_endpoint:
+#                cloud: "{{namespace}}"
+#                service: '{{service_name}}'
+#                interface: '{{item.interface}}'
+#                url: '{{item.url}}'
+#                region: '{{service_region}}'
+#                enabled: true
+#                state: present
+#              with_items:
+#                - interface: 'internal'
+#                  url: '{{service_internal_url}}'
+#                - interface: 'public'
+#                  url: '{{service_public_url}}'
+#                - interface: 'admin'
+#                  url: '{{service_admin_url}}'
+
+- name: Create keystone endpoints
   k8s_v1_job:
     host: "{{coe_host}}"
     context: "{{coe_config_context}}"
@@ -8,36 +58,17 @@
     state: present
     restart_policy: OnFailure
     containers:
-      - image: tripleoupstream/centos-binary-keystone
-        name: '{{service_name}}-keystone-user'
+      - image: "tripleoupstream/centos-binary-keystone"
+        name: '{{service_name}}-keystone'
         command:
-          - openstack
-          - --os-cloud
-          - "{{namespace}}"
-          - user
-          - create
-          - --project
-          - '{{service_project}}'
-          - --password
-          - '{{service_password}}'
-          - '{{service_username}}'
+          - 'ansible-playbook'
+          - '/tmp/keystone/playbook.yaml'
         volume_mounts: &volume_mounts
           - name: clouds-yaml
             mountPath: /etc/openstack/
             read_only: true
-      - image: tripleoupstream/centos-binary-keystone
-        name: '{{service_name}}-keystone-service'
-        command:
-          - openstack
-          - --os-cloud
-          - "{{namespace}}"
-          - service
-          - create
-          - --enable
-          - --name
-          - '{{service_name}}'
-          - '{{service_type}}'
-        volume_mounts: *volume_mounts
+          - name: playbook
+            mountPath: /tmp/keystone/
       - image: tripleoupstream/centos-binary-keystone
         name: '{{service_name}}-keystone-internal-url'
         command:
@@ -87,4 +118,7 @@
       - name: clouds-yaml
         secret:
           secret_name: '{{clouds_config}}'
+      - name: playbook
+        config_map:
+          name: '{{service_name}}-keystone'
     state: present
