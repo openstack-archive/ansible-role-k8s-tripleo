@@ -1,4 +1,4 @@
-- name: Create glance keystone job
+- name: Create keystone endpoints
   k8s_v1_job:
     host: "{{coe_host}}"
     context: "{{coe_config_context}}"
@@ -11,16 +11,12 @@
       - image: tripleoupstream/centos-binary-keystone
         name: '{{service_name}}-keystone-user'
         command:
-          - openstack
-          - --os-cloud
-          - "{{namespace}}"
-          - user
-          - create
-          - --project
-          - '{{service_project}}'
-          - --password
-          - '{{service_password}}'
-          - '{{service_username}}'
+          - ansible
+          - localhost
+          - -m
+          - os_user
+          - -a
+          - "cloud={{namespace}} state=present name={{service_username}} password={{service_password}} default_project={{service_project}}"
         volume_mounts: &volume_mounts
           - name: clouds-yaml
             mountPath: /etc/openstack/
