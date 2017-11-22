@@ -1,0 +1,8 @@
+- project:
+    name: openstack/ansible-role-k8s-tripleo
+    check:
+      jobs:
+        - ansible-role-k8s-mariadb-kubernetes-centos
+        - ansible-role-k8s-mariadb-openshift-centos
+        - ansible-role-k8s-keystone-kubernetes-centos
+        - ansible-role-k8s-keystone-openshift-centos
