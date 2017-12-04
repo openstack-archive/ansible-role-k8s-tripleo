@@ -86,8 +86,15 @@ def main():
     hieradata = module.params['hieradata']
     hieradata_file = module.params['hieradata_file']
 
-    if not (hieradata or (hieradata_file and os.path.exists(hieradata_file))):
-        module.fail_json(msg="Either hieradata or hieradata_file must be set")
+
+    if not hieradata and not hieradata_file:
+        module.exit_json(**{'changed': False, 'conf_dict': {}})
+
+    if hieradata is None and (hieradata_file and
+                              os.path.exists(hieradata_file)):
+        msg = "Data file {data_file} doesn't exist".format(
+            data_file=hieradata_file)
+        module.fail_json(msg=msg)
 
     if os.path.exists(hieradata_file):
         # NOTE(flaper87): This will load both, json and yaml, files
