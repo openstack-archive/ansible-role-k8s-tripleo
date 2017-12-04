@@ -1,0 +1,8 @@
+Code-Review+2: Flavio Percoco <fpercoco@redhat.com>
+Workflow+1: Flavio Percoco <fpercoco@redhat.com>
+Verified+2: Zuul
+Submitted-by: Zuul
+Submitted-at: Mon, 04 Dec 2017 09:51:28 +0000
+Reviewed-on: https://review.openstack.org/525102
+Project: openstack/ansible-role-k8s-tripleo
+Branch: refs/heads/master
