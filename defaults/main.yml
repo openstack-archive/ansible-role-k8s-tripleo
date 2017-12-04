@@ -4,6 +4,6 @@ namespace: openstack
 # TripleO
 default: {}
 schema: {}
-hieradata: {}
-hieradata_file: '/etc/puppet/hieradata/service_configs.json'
+hieradata:
+hieradata_file:
 fact_variable: ''
