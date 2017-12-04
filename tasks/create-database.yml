@@ -1,15 +1,15 @@
-- name: Create database for {{service_name}} job
+- name: Create {{database_name}} database
   k8s_v1_job:
     host: "{{coe_host}}"
     context: "{{coe_config_context}}"
     kubeconfig: "{{coe_config_file}}"
-    name: '{{service_name}}-createdb'
+    name: '{{database_name}}-createdb'
     namespace: "{{namespace}}"
     state: present
     restart_policy: OnFailure
     containers:
       - image: "tripleoupstream/centos-binary-mariadb"
-        name: '{{service_name}}-createdb'
+        name: '{{database_name}}-createdb'
         command:
           - mysql
           - -e
