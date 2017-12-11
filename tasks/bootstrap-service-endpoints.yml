@@ -20,6 +20,7 @@
                 state: present
                 name: "{{service_username}}"
                 password: "{{service_password}}"
+                domain: "{{service_domain}}"
                 default_project: "{{service_project}}"
             - os_keystone_service:
                 cloud: "{{namespace}}"
