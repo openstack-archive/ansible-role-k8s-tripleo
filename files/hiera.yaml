@@ -1,0 +1,15 @@
+---
+:backends:
+  - json
+  - yaml
+:json:
+  :datadir: /etc/puppet/hieradata
+:yaml:
+  :datadir: /etc/puppet/hieradata
+:hierarchy:
+  - config_step
+  - hieradata-overrides-classic-undercloud
+  - "%{::operatingsystem}"
+  - "%{::osfamily}"
+  - puppet-stack-config
+  - puppet-stack-config
