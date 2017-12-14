@@ -1,0 +1,161 @@
+- name: Create heira.yaml configmap
+  k8s_v1_config_map:
+    host: "{{coe_host}}"
+    context: "{{coe_config_context}}"
+    kubeconfig: "{{coe_config_file}}"
+    name: '{{service_name}}-hiera'
+    namespace: "{{namespace}}"
+    state: present
+    labels:
+      service: "{{service_name}}"
+    data:
+      hiera.yaml: |-
+        {{ hiera_config | default(lookup('file', 'hiera.yaml')) }}
+
+- name: Create puppet-apply configmap
+  k8s_v1_config_map:
+    host: "{{coe_host}}"
+    context: "{{coe_config_context}}"
+    kubeconfig: "{{coe_config_file}}"
+    name: '{{service_name}}-puppet-apply'
+    namespace: "{{namespace}}"
+    state: present
+    labels:
+      service: "{{service_name}}"
+    data:
+      # NOTE(flaper87): This script won't be needed
+      # in ansible 2.5
+      upload-cm.py: |-
+        {{ lookup('file', 'upload-cm.py') }}
+
+      config.pp: |-
+        include ::tripleo::packages
+
+        {{step_config}}
+      playbook.yaml: |-
+        - hosts: localhost
+          gather_facts: no
+          connection: local
+          tasks:
+            - name: Remove /etc/puppet/ssl
+              file:
+                path: /etc/puppet/ssl
+                state: absent
+            - name: Copy hieradata files into the right location
+              shell:
+                cmd: |-
+                  set -ex
+                  cp -RL /var/lib/tripleo-hieradata /etc/puppet/hieradata
+                  cp -RL /var/lib/tripleo-hiera/hiera.yaml /etc/puppet/
+                  chmod 755 -R /etc/puppet
+                  exit $?
+                executable: /bin/bash
+            - name: Run puppet apply
+              shell:
+                cmd: |-
+                  set -ex
+
+                  # Create a reference timestamp to easily find all files touched by
+                  # puppet. The sync ensures we get all the files we want due to
+                  # different timestamp.
+                  touch /tmp/the_origin_of_time
+                  sync
+
+                  set +e
+                  /usr/bin/puppet apply --detailed-exitcodes --modulepath=/etc/puppet/modules:/usr/share/openstack-puppet/modules/ --color=false --logdest syslog --logdest console --tags {{tags}} config.pp
+                  rc=$?
+                  set -e
+                  if [ $rc -ne 2 -a $rc -ne 0 ]; then
+                    exit $rc
+                  fi
+
+                  if [ -z "$NO_ARCHIVE" ]; then
+                    archivedirs=("/etc" "/root" "/opt" "/var/lib/ironic/tftpboot" "/var/lib/ironic/httpboot" "/var/www" "/var/spool/cron" "/var/lib/nova/.ssh")
+                    rsync_srcs=""
+                    for d in "${archivedirs[@]}"; do
+                      if [ -d "$d" ]; then
+                        rsync_srcs+=" $d"
+                      fi
+                    done
+
+                    # Also make a copy of files modified during puppet run
+                    # This is useful for debugging
+                    rm -Rf /var/lib/config-data
+                    mkdir -p /var/lib/config-data/puppet-generated/
+
+                    rsync -a -R --delay-updates --delete-after $rsync_srcs /var/lib/config-data/
+                    rsync -a -R -0 --delay-updates --delete-after --files-from=<(find $rsync_srcs -newer /tmp/the_origin_of_time -not -path '/etc/puppet*' -print0) / /var/lib/config-data/puppet-generated/
+                  fi
+
+                executable: /bin/bash
+                chdir: '{%raw%}{{playbook_dir}}{%endraw%}'
+              environment:
+                FACTER_hostname: "{{service_name}}"
+                FACTER_uuid: docker
+            - name: Get list of files
+              shell:
+                cmd: |-
+                  set -ex
+                  find /var/lib/config-data/puppet-generated/
+                  exit $?
+                executable: /bin/bash
+            - name: Run configmap uploader
+              shell:
+                cmd: |-
+                  for d in `find /var/lib/config-data/puppet-generated -type d`;
+                  do
+                    name=${d#"/var/lib/config-data/puppet-generated/"}
+                    name=${name//\//"-"}
+                    name="{{service_name}}-$name"
+                    /usr/bin/python upload-cm.py --debug --cm-name $name --cm-namespace {{namespace}} --cm-label service_name={{service_name}} -d $d
+                  done
+                executable: /bin/bash
+                chdir: '{%raw%}{{playbook_dir}}{%endraw%}'
+              when:
+                - "{{upload_puppet_generated | default(true)}}"
+            - name: Run configmap uploader for puppet_apply_collect_dirs
+              shell:
+                cmd: |-
+                  /usr/bin/python upload-cm.py --debug --cm-name {%raw%}{{item.key}}{%endraw%} --cm-namespace {{namespace}} --cm-label service_name={{service_name}} -d {%raw%}{{item.value}}{%endraw%}
+
+                executable: /bin/bash
+                chdir: '{%raw%}{{playbook_dir}}{%endraw%}'
+              with_dict:
+                {{puppet_apply_collect_dirs | to_yaml}}
+
+- name: Run puppet-apply
+  k8s_v1_job:
+    host: "{{coe_host}}"
+    context: "{{coe_config_context}}"
+    kubeconfig: "{{coe_config_file}}"
+    name: '{{service_name}}-puppet-apply'
+    namespace: "{{namespace}}"
+    state: present
+    restart_policy: OnFailure
+    labels:
+      service: "{{service_name}}"
+    containers:
+      - image: "{{service_image}}"
+        image_pull_policy: IfNotPresent
+        name: '{{service_name}}-puppet-apply'
+        command:
+          - 'ansible-playbook'
+          - '-vvvv'
+          - '/var/lib/puppet-apply/playbook.yaml'
+        volume_mounts: &volume_mounts
+          - name: playbook
+            mountPath: /var/lib/puppet-apply/
+          - name: hiera
+            mountPath: /var/lib/tripleo-hiera/
+          - name: hieradata
+            mountPath: /var/lib/tripleo-hieradata/
+    volumes:
+      - name: playbook
+        config_map:
+          name: '{{service_name}}-puppet-apply'
+      - name: hieradata
+        config_map:
+          name: '{{hieradata_configmap}}'
+      - name: hiera
+        config_map:
+          name: '{{service_name}}-hiera'
