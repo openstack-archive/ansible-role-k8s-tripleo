@@ -8,7 +8,7 @@
     state: present
     restart_policy: OnFailure
     containers:
-      - image: "tripleoupstream/centos-binary-mariadb"
+      - image: "tripleomaster/centos-binary-mariadb:current-tripleo"
         name: '{{database_name}}-createdb'
         command:
           - mysql

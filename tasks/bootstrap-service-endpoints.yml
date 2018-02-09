@@ -59,7 +59,7 @@
     state: present
     restart_policy: OnFailure
     containers:
-      - image: "tripleoupstream/centos-binary-keystone"
+      - image: "tripleomaster/centos-binary-keystone:current-tripleo"
         name: '{{service_name}}-keystone'
         command:
           - 'ansible-playbook'
@@ -70,7 +70,7 @@
             read_only: true
           - name: playbook
             mountPath: /tmp/keystone/
-      - image: tripleoupstream/centos-binary-keystone
+      - image: "tripleomaster/centos-binary-keystone:current-tripleo"
         name: '{{service_name}}-keystone-internal-url'
         command:
           - openstack
@@ -85,7 +85,7 @@
           - 'internal'
           - '{{service_internal_url}}'
         volume_mounts: *volume_mounts
-      - image: tripleoupstream/centos-binary-keystone
+      - image: "tripleomaster/centos-binary-keystone:current-tripleo"
         name: '{{service_name}}-keystone-public-url'
         command:
           - openstack
@@ -100,7 +100,7 @@
           - 'public'
           - '{{service_public_url}}'
         volume_mounts: *volume_mounts
-      - image: tripleoupstream/centos-binary-keystone
+      - image: "tripleomaster/centos-binary-keystone:current-tripleo"
         name: '{{service_name}}-keystone-admin-url'
         command:
           - openstack
