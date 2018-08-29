@@ -1,5 +1,4 @@
 - project:
-    name: openstack/ansible-role-k8s-tripleo
     check:
       jobs:
         - ansible-role-k8s-glance-kubernetes-centos
