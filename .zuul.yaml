@@ -1,5 +1,0 @@
-- project:
-    check:
-      jobs:
-        - ansible-role-k8s-glance-kubernetes-centos
-        - ansible-role-k8s-glance-openshift-centos

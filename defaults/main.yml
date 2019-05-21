@@ -1,9 +1,0 @@
-# Kubernetes
-namespace: openstack
-
-# TripleO
-default: {}
-schema: {}
-hieradata:
-hieradata_file:
-fact_variable: ''
